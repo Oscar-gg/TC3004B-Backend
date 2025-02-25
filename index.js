@@ -1,8 +1,12 @@
+import "dotenv/config";
 import express from "express";
+import indexRoutes from "./routes/index.routes.js";
+import itemRoutes from "./routes/items.routes.js";
+
 const app = express();
 
-import router from "./routes/index.routes.js";
-app.use("/", router);
+app.use(indexRoutes);
+app.use(itemRoutes);
 
 app.listen(5000, () => {
   console.log("Server is running on port 5000");
