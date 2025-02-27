@@ -17,8 +17,14 @@ const sqlConfig = {
   },
 };
 
-const sqlConnect = async () => {
-  await sql.connect(sqlConfig);
+let pool = undefined;
+
+const getSqlPool = async () => {
+  if (!pool) {
+    pool = await sql.connect(sqlConfig);
+  }
+
+  return pool;
 };
 
-export { sql, sqlConnect };
+export { getSqlPool };
