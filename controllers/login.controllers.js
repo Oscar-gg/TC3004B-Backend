@@ -74,8 +74,8 @@ export const login = async (req, res) => {
   try {
     isLogin = req.body.password === result.recordset[0].password;
   } catch (error) {
-    res.json(false);
+    res.status(400).json(false);
     return;
   }
-  res.json(isLogin);
+  res.status(200).json(isLogin);
 };
