@@ -7,11 +7,11 @@ import loginRoutes from "./routes/login.routes.js";
 import cors from "cors";
 import morgan from "morgan";
 
-import { connectDb } from "./utils/mongodb.js";
+// import { connectDb } from "./utils/mongodb.js";
 
 const app = express();
 
-await connectDb();
+// await connectDb();
 
 app.use(express.json());
 app.use(cors());
