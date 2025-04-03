@@ -1,6 +1,7 @@
 import { getSqlPool } from "../utils/sql.js";
 import sql from "mssql";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
 export const getUsers = async (req, res) => {
   const pool = await getSqlPool();
@@ -97,6 +98,19 @@ export const login = async (req, res) => {
       .update(req.body.password + salt + pepper)
       .digest("hex");
     isLogin = salt + saltedPassword === result.recordset[0].password;
+
+    if (isLogin) {
+      const token = jwt.sign({ sub: result.recordset[0].id }, process.env.JWT, {
+        expiresIn: "1h",
+      });
+      res.status(200).json({
+        isLogin,
+        user: result.recordset[0],
+        token: token,
+      });
+    } else {
+      res.status(400).json({ isLogin, user: {} });
+    }
   } catch (error) {
     res.status(400).json(false);
     return;
