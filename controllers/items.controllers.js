@@ -20,17 +20,22 @@ export const getItem = async (req, res) => {
 };
 
 export const createItems = async (req, res) => {
-  const pool = await getSqlPool();
+  try {
+    const pool = await getSqlPool();
 
-  const { name, price } = req.body;
+    const { name, price } = req.body;
 
-  const result = await pool
-    .request()
-    .input("name", sql.VarChar, name)
-    .input("price", sql.Decimal, price)
-    .query("INSERT INTO items (name, price) Values (@name, @price)");
+    const result = await pool
+      .request()
+      .input("name", sql.VarChar, name)
+      .input("price", sql.Decimal, price)
+      .query("INSERT INTO items (name, price) Values (@name, @price)");
 
-  res.json(result);
+    res.json(result);
+  } catch (error) {
+    console.error("Error creating item:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const deleteItems = async (req, res) => {
@@ -38,7 +43,7 @@ export const deleteItems = async (req, res) => {
 
   const result = await pool
     .request()
-    .input("id", sql.Int, req.body.id)
+    .input("id", sql.Int, req.params.id)
     .query("DELETE FROM items where id = @id");
 
   res.json(result);

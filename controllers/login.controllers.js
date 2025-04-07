@@ -108,12 +108,13 @@ export const login = async (req, res) => {
         user: result.recordset[0],
         token: token,
       });
+      return;
     } else {
       res.status(400).json({ isLogin, user: {} });
+      return;
     }
   } catch (error) {
     res.status(400).json(false);
     return;
   }
-  res.status(200).json(isLogin);
 };
