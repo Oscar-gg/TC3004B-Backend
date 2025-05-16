@@ -1,37 +1,59 @@
-import { getSqlPool } from "../utils/sql.js";
-import sql from "mssql";
+import { db } from "../utils/firebase.js";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
 
 export const getItems = async (req, res) => {
-  const pool = await getSqlPool();
-
-  const result = await pool.query`select * from items`;
-  res.json(result.recordset);
+  try {
+    const itemsCollection = collection(db, "items");
+    const snapshot = await getDocs(itemsCollection);
+    const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    res.json(items);
+  } catch (error) {
+    console.error("Error getting items:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const getItem = async (req, res) => {
-  const pool = await getSqlPool();
+  try {
+    const itemDoc = doc(db, "items", req.params.id);
+    const itemSnapshot = await getDoc(itemDoc);
 
-  const result = await pool
-    .request()
-    .input("id", sql.Int, req.params.id)
-    .query("select * from items where id = @id");
+    if (!itemSnapshot.exists()) {
+      return res.status(404).json({ error: "Item not found" });
+    }
 
-  res.json(result.recordset);
+    res.json({ id: itemSnapshot.id, ...itemSnapshot.data() });
+  } catch (error) {
+    console.error("Error getting item:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const createItems = async (req, res) => {
   try {
-    const pool = await getSqlPool();
-
     const { name, price } = req.body;
 
-    const result = await pool
-      .request()
-      .input("name", sql.VarChar, name)
-      .input("price", sql.Decimal, price)
-      .query("INSERT INTO items (name, price) Values (@name, @price)");
+    const newItem = {
+      name,
+      price: Number(price),
+      createdAt: new Date(),
+    };
 
-    res.json(result);
+    const itemsCollection = collection(db, "items");
+    const docRef = await addDoc(itemsCollection, newItem);
+
+    res.status(201).json({
+      id: docRef.id,
+      ...newItem,
+    });
   } catch (error) {
     console.error("Error creating item:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -39,25 +61,42 @@ export const createItems = async (req, res) => {
 };
 
 export const deleteItems = async (req, res) => {
-  const pool = await getSqlPool();
+  try {
+    const itemDoc = doc(db, "items", req.params.id);
+    await deleteDoc(itemDoc);
 
-  const result = await pool
-    .request()
-    .input("id", sql.Int, req.params.id)
-    .query("DELETE FROM items where id = @id");
-
-  res.json(result);
+    res.status(200).json({ message: "Item deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const updateItems = async (req, res) => {
-  const pool = await getSqlPool();
+  try {
+    const { id, name, price } = req.body;
 
-  const result = await pool
-    .request()
-    .input("id", sql.Int, req.body.id)
-    .input("name", sql.VarChar, req.body.name)
-    .input("price", sql.Decimal, req.body.price)
-    .query("UPDATE items SET name = @name, price = @price where id = @id");
+    const itemDoc = doc(db, "items", id);
+    const itemSnapshot = await getDoc(itemDoc);
 
-  res.json(result);
+    if (!itemSnapshot.exists()) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    const updatedItem = {
+      name,
+      price: Number(price),
+      updatedAt: new Date(),
+    };
+
+    await updateDoc(itemDoc, updatedItem);
+
+    res.json({
+      id,
+      ...updatedItem,
+    });
+  } catch (error) {
+    console.error("Error updating item:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
